@@ -10,8 +10,11 @@ import {
     HttpStatus,
     InternalServerErrorException,
     UseGuards,
+    UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+
+import { CryptoInterceptor } from 'src/common/interceptors/crypto.interceptor';
 
 import { PositiveIntPipe } from '../../common/pipes/positive-int-pipe';
 import { PermissionsGuard } from '../guards/permissions/permissions.guard';
@@ -21,10 +24,10 @@ import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
+@UseInterceptors(CryptoInterceptor)
 @Controller('user')
 export class UserController {
     constructor(private readonly userService: UserService) {}
-
     @Post()
     @HttpCode(HttpStatus.CREATED)
     create(@Body() createUserDto: CreateUserDto) {
@@ -66,5 +69,11 @@ export class UserController {
     @HttpCode(HttpStatus.NO_CONTENT)
     async remove(@Param('id', PositiveIntPipe) id: number) {
         await this.userService.remove(id);
+    }
+
+    @Post('sensitive-operation')
+    createSensitive(@Body() data: any) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        return { success: true, received: data };
     }
 }

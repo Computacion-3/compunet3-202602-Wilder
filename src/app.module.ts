@@ -1,15 +1,18 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { TraceabilityInterceptor } from './common/interceptors/traceability.interceptor';
+import { LoggerModule } from './common/logger/logger.module';
 @Module({
     imports: [
         ConfigModule.forRoot({ isGlobal: true }), // Load .env file and make it available globally
         TypeOrmModule.forRootAsync({
-            imports: [ConfigModule],
+            imports: [LoggerModule, ConfigModule],
             inject: [ConfigService],
             useFactory: (configService: ConfigService) =>
                 ({
@@ -24,9 +27,16 @@ import { AuthModule } from './auth/auth.module';
                 }) as TypeOrmModuleOptions,
         }),
         AuthModule,
+        LoggerModule,
     ],
 
     controllers: [AppController],
-    providers: [AppService],
+    providers: [
+        AppService,
+        {
+            provide: APP_INTERCEPTOR,
+            useClass: TraceabilityInterceptor,
+        },
+    ],
 })
 export class AppModule {}
